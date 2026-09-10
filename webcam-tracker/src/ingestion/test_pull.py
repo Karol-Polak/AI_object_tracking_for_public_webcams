@@ -9,7 +9,8 @@ from pathlib import Path
 #TOWN STREAM - JACKSONE TOWN
 STREAM_PAGE_URL = "https://www.youtube.com/watch?v=1EiC9bvVGnk"
 
-OUTPUT_DIR = Path("data/frames")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]  # webcam-tracker/
+OUTPUT_DIR = PROJECT_ROOT / "data" / "frames"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_stream_url(youtube_url: str) -> str:

@@ -1,5 +1,39 @@
+# Virtual environment
 venv/
+env/
+ENV/
+
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Data / model outputs (test artifacts, not source-controlled)
 data/
+*.pt
+*.pth
+
+# Ultralytics
+runs/
+
+# IDE
 .idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets
+.env
+*.env
+
+# Logs
+*.log
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/

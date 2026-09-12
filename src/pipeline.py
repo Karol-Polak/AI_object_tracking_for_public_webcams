@@ -8,7 +8,10 @@ from src import config
 from src.ingestion.stream_source import StreamSource
 from src.detection_tracking.tracker import Tracker
 from src.counting.line_counter import LineCounter
+from src.storage.db import init_db
 
+
+init_db()
 
 def run(duration_seconds: int = 60, save_every_n_frames: int = 15, save_output: bool = True):
     output_dir = config.DATA_DIR / "pipeline_output"

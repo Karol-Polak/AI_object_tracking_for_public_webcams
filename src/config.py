@@ -5,7 +5,7 @@ Keep camera-specific and tunable values here instead of scattered across modules
 
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # --- Camera source ---
 STREAM_PAGE_URL = "https://www.youtube.com/watch?v=1EiC9bvVGnk"

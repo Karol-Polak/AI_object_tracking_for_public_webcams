@@ -20,6 +20,15 @@ YouTube livestream ──▶ StreamSource ──▶ Tracker ──▶ LineCounte
 4. **`src/storage/`** persists each new crossing (camera, object class, direction, timestamp) to SQLite via SQLAlchemy.
 5. **`src/pipeline.py`** wires all of the above into a `run()` loop, periodically saving an annotated frame (boxes, labels, the counting line, running totals) to `data/pipeline_output/`.
 
+## Testing
+
+```bash
+pip install -r requirements.txt
+pytest -v
+```
+
+Runs automatically on every push via GitHub Actions (`.github/workflows/ci.yml`).
+
 ## Setup
 
 Requires Python 3.12+.
@@ -68,7 +77,9 @@ Python · Ultralytics YOLOv8 · supervision (ByteTrack + LineZone) · OpenCV · 
 
 This is an early-stage prototype, not a production service:
 
-- No automated test suite yet.
-- No retry/reconnect logic around the live stream — a transient network interruption ends the current run early.
-- Single camera / single counting line per run.
+- Single camera / single counting line per run (see Configuration above).
 - Saved annotated frames (which may contain identifiable people/vehicles from the public feed) are kept indefinitely with no retention policy — something to address before any real deployment.
+
+## License
+
+[MIT](LICENSE)

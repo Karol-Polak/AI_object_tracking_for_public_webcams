@@ -1,15 +1,23 @@
 """
 Wraps supervision's LineZone to count objects crossing a defined line.
-Persists each individual crossing event to the database.
+Reports each individual crossing event via an injected callback, so this
+class has no dependency on how (or whether) crossings get persisted.
 """
+
+from typing import Callable, Optional
 
 import supervision as sv
 from src import config
-from src.storage.db import save_crossing
 
 
 class LineCounter:
-    def __init__(self, frame_width: int, frame_height: int, camera_id: str = "default"):
+    def __init__(
+        self,
+        frame_width: int,
+        frame_height: int,
+        camera_id: str = "default",
+        on_crossing: Optional[Callable[[str, str, str], None]] = None,
+    ):
         start_x, start_y = config.LINE_START_FRACTION
         end_x, end_y = config.LINE_END_FRACTION
 
@@ -22,6 +30,7 @@ class LineCounter:
         self.label_annotator = sv.LabelAnnotator()
 
         self.camera_id = camera_id
+        self._on_crossing = on_crossing
         self._prev_in_per_class = {}
         self._prev_out_per_class = {}
 
@@ -34,25 +43,23 @@ class LineCounter:
         current_in = dict(self.zone.in_count_per_class)
         current_out = dict(self.zone.out_count_per_class)
 
-        # figure out class_id -> name mapping from current detections batch
-        id_to_name = {}
-        if detections.class_id is not None and detections.data.get("class_name") is not None:
-            for cid, cname in zip(detections.class_id, detections.data["class_name"]):
-                id_to_name[cid] = cname
+        if self._on_crossing is not None:
+            # figure out class_id -> name mapping from current detections batch
+            id_to_name = {}
+            if detections.class_id is not None and detections.data.get("class_name") is not None:
+                for cid, cname in zip(detections.class_id, detections.data["class_name"]):
+                    id_to_name[cid] = cname
 
-        for class_id, count in current_in.items():
-            prev = self._prev_in_per_class.get(class_id, 0)
-            if count > prev:
-                class_name = id_to_name.get(class_id, str(class_id))
-                for _ in range(count - prev):
-                    save_crossing(self.camera_id, class_name, "in")
-
-        for class_id, count in current_out.items():
-            prev = self._prev_out_per_class.get(class_id, 0)
-            if count > prev:
-                class_name = id_to_name.get(class_id, str(class_id))
-                for _ in range(count - prev):
-                    save_crossing(self.camera_id, class_name, "out")
+            for direction, current, previous in (
+                ("in", current_in, self._prev_in_per_class),
+                ("out", current_out, self._prev_out_per_class),
+            ):
+                for class_id, count in current.items():
+                    prev = previous.get(class_id, 0)
+                    if count > prev:
+                        class_name = id_to_name.get(class_id, str(class_id))
+                        for _ in range(count - prev):
+                            self._on_crossing(self.camera_id, class_name, direction)
 
         self._prev_in_per_class = current_in
         self._prev_out_per_class = current_out

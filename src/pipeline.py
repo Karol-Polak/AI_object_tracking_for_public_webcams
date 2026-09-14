@@ -3,28 +3,32 @@ Main pipeline: connects ingestion -> tracking -> counting.
 Run this to process the live stream continuously.
 """
 
+import logging
+
 import cv2
 from src import config
 from src.ingestion.stream_source import StreamSource
 from src.detection_tracking.tracker import Tracker
 from src.counting.line_counter import LineCounter
-from src.storage.db import init_db
+from src.storage.db import init_db, save_crossing
 
+logger = logging.getLogger(__name__)
 
-init_db()
 
 def run(duration_seconds: int = 60, save_every_n_frames: int = 15, save_output: bool = True):
+    init_db()
+
     output_dir = config.DATA_DIR / "pipeline_output"
     if save_output:
         output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("Opening stream...")
+    logger.info("Opening stream...")
     source = StreamSource(config.STREAM_PAGE_URL).open()
     width, height = source.frame_size
     max_frames = int(source.fps * duration_seconds)
 
     tracker = Tracker()
-    counter = LineCounter(width, height)
+    counter = LineCounter(width, height, on_crossing=save_crossing)
 
     frame_count = 0
     saved_count = 0
@@ -41,15 +45,19 @@ def run(duration_seconds: int = 60, save_every_n_frames: int = 15, save_output: 
                 annotated = counter.annotate(frame, detections)
                 out_path = output_dir / f"frame_{saved_count:03d}.jpg"
                 cv2.imwrite(str(out_path), annotated)
-                print(f"[{frame_count}] Saved {out_path.name} | in={counter.in_count} out={counter.out_count}")
+                logger.info(
+                    "[%d] Saved %s | in=%d out=%d",
+                    frame_count, out_path.name, counter.in_count, counter.out_count,
+                )
                 saved_count += 1
 
             frame_count += 1
     finally:
         source.release()
 
-    print(f"\nFinal counts — in: {counter.in_count}, out: {counter.out_count}")
+    logger.info("Final counts — in: %d, out: %d", counter.in_count, counter.out_count)
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     run(duration_seconds=60, save_every_n_frames=15)

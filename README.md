@@ -29,6 +29,16 @@ pytest -v
 
 Runs automatically on every push via GitHub Actions (`.github/workflows/ci.yml`).
 
+## Dashboard
+
+A small read-only Flask app for viewing aggregate crossing counts collected in the database:
+
+```bash
+python -m src.dashboard.app
+```
+
+Then open http://127.0.0.1:5000 — shows total in/out counts and a bar chart of crossings by object class and direction, with a manual refresh button. The same data is available as JSON at `/api/summary`.
+
 ## Setup
 
 Requires Python 3.12+.
@@ -71,7 +81,7 @@ The project currently targets a single camera/stream per run. The database schem
 
 ## Tech stack
 
-Python · Ultralytics YOLOv8 · supervision (ByteTrack + LineZone) · OpenCV · yt-dlp · SQLAlchemy · SQLite
+Python · Ultralytics YOLOv8 · supervision (ByteTrack + LineZone) · OpenCV · yt-dlp · SQLAlchemy · SQLite · Flask · Chart.js
 
 ## Known limitations
 

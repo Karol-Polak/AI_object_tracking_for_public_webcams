@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Crossings Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; color: #222; }
+    h1 { margin-bottom: 4px; }
+    p.subtitle { color: #666; margin-top: 0; }
+    .tiles { display: flex; gap: 16px; margin: 24px 0; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 8px; padding: 16px; text-align: center; }
+    .tile .value { font-size: 28px; font-weight: 600; }
+    .tile .label { color: #666; font-size: 13px; text-transform: uppercase; }
+    button { margin-top: 24px; padding: 8px 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Crossings Dashboard</h1>
+  <p class="subtitle">Aggregate counts from the crossings database.</p>
+
+  <div class="tiles">
+    <div class="tile"><div class="value">{{ total_in }}</div><div class="label">Total In</div></div>
+    <div class="tile"><div class="value">{{ total_out }}</div><div class="label">Total Out</div></div>
+    <div class="tile"><div class="value">{{ summary|length }}</div><div class="label">Classes Seen</div></div>
+  </div>
+
+  <canvas id="chart" height="300"></canvas>
+  <button id="refresh">Refresh</button>
+
+  <script>
+    const initialSummary = {{ summary|tojson }};
+
+    function toChartData(summary) {
+      const classes = Object.keys(summary);
+      return {
+        labels: classes,
+        datasets: [
+          { label: "In", data: classes.map((c) => summary[c]["in"] || 0), backgroundColor: "#4c6ef5" },
+          { label: "Out", data: classes.map((c) => summary[c]["out"] || 0), backgroundColor: "#f76707" },
+        ],
+      };
+    }
+
+    const chart = new Chart(document.getElementById("chart"), {
+      type: "bar",
+      data: toChartData(initialSummary),
+      options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+    });
+
+    document.getElementById("refresh").addEventListener("click", async () => {
+      const response = await fetch("/api/summary");
+      const summary = await response.json();
+      const updated = toChartData(summary);
+      chart.data.labels = updated.labels;
+      chart.data.datasets = updated.datasets;
+      chart.update();
+    });
+  </script>
+</body>
+</html>
